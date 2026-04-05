@@ -9,7 +9,7 @@ app.use(cors());
 
 // ─── CONFIGURACIÓN ───────────────────────────────────────────────
 const ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
-const BASE_URL = process.env.BASE_URL || "https://mi-cv-app.up.railway.app";
+const BASE_URL = process.env.BASE_URL || "https://mi-cv-app-production.up.railway.app";
 
 const client = new MercadoPagoConfig({ accessToken: ACCESS_TOKEN });
 
