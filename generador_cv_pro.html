@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CVrápido · Generador de CV con IA</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f7f5f0;
+      --surface: #ffffff;
+      --border: #e0ddd6;
+      --text: #1a1915;
+      --muted: #7a7870;
+      --accent: #2147c8;
+      --accent-dk: #1535a0;
+      --green: #1a7a52;
+      --green-bg: #e8f5ee;
+      --green-border: #a8d9bc;
+      --purple: #4c1d95;
+      --r: 12px;
+      --font-d: 'DM Serif Display', Georgia, serif;
+      --font-b: 'DM Sans', system-ui, sans-serif;
+    }
+    body { font-family: var(--font-b); background: var(--bg); color: var(--text); min-height: 100vh; padding: 2rem 1rem 5rem; }
+    .container { max-width: 720px; margin: 0 auto; }
+
+    /* HEADER */
+    .header { text-align: center; margin-bottom: 2.5rem; }
+    .logo { font-family: var(--font-d); font-size: 1.6rem; color: var(--text); margin-bottom: .25rem; }
+    .logo span { color: var(--accent); }
+    .tagline { font-size: 14px; color: var(--muted); }
+
+    /* STEPS */
+    .steps { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 2rem; }
+    .step { font-size: 12px; font-weight: 500; padding: 5px 14px; border-radius: 20px; background: var(--border); color: var(--muted); transition: all .3s; }
+    .step.active { background: var(--accent); color: #fff; }
+    .step.done { background: var(--green-bg); color: var(--green); }
+    .sep { color: var(--border); }
+
+    /* CARD */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 1.75rem; margin-bottom: 1.25rem; }
+
+    /* FORM */
+    .field { margin-bottom: 1.1rem; }
+    .field label { display: block; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 5px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media(max-width:500px){ .row2 { grid-template-columns: 1fr; } }
+    input, textarea { width: 100%; padding: 10px 13px; font-size: 14px; font-family: var(--font-b); border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); outline: none; transition: border-color .15s, background .15s; }
+    input:focus, textarea:focus { border-color: var(--accent); background: #fff; }
+    textarea { min-height: 75px; resize: vertical; line-height: 1.5; }
+
+    /* BUTTONS */
+    .btn { width: 100%; padding: 12px; font-size: 15px; font-weight: 500; font-family: var(--font-b); cursor: pointer; border: none; border-radius: 9px; transition: background .15s, transform .1s; }
+    .btn:active { transform: scale(.99); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-blue { background: var(--accent); color: #fff; }
+    .btn-blue:hover { background: var(--accent-dk); }
+    .btn-green { background: var(--green); color: #fff; margin-bottom: 10px; }
+    .btn-green:hover { background: #155f3f; }
+    .btn-outline { background: transparent; color: var(--muted); border: 1px solid var(--border); font-size: 13px; }
+    .btn-outline:hover { background: var(--bg); }
+    .btn-gray { background: #eee; color: var(--text); margin-bottom: 8px; }
+    .btn-gray:hover { background: #e0ddd6; }
+
+    .loader { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .65s linear infinite; vertical-align: middle; margin-right: 7px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* TEMPLATE GRID */
+    .tpl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+    .tpl-card { border: 2px solid var(--border); border-radius: 10px; overflow: hidden; cursor: pointer; transition: border-color .2s; }
+    .tpl-card:hover { border-color: #7c9cf8; }
+    .tpl-card.sel { border-color: var(--accent); }
+    .tpl-thumb { height: 100px; }
+    .tpl-label { font-size: 11px; font-weight: 500; text-align: center; padding: 6px; background: var(--bg); color: var(--muted); }
+    .tpl-card.sel .tpl-label { background: #dce8ff; color: var(--accent-dk); }
+
+    /* MINI THUMBS */
+    .th-wrap { height: 100%; padding: 7px; }
+    .tl { height: 4px; border-radius: 2px; margin-bottom: 3px; }
+    .tl.dk { background: #222; } .tl.gy { background: #ccc; } .tl.wh { background: rgba(255,255,255,.65); } .tl.bl { background: #3b5bdb; } .tl.pp { background: #c4b5fd; }
+    .tl.w100{width:100%} .tl.w80{width:80%} .tl.w70{width:70%} .tl.w60{width:60%} .tl.w50{width:50%} .tl.w40{width:40%}
+    .tsep { height: .5px; background: #ddd; margin: 4px 0; }
+
+    /* CV RENDERS */
+    .cv-wrap { margin-bottom: 1.25rem; }
+
+    /* Clásico */
+    .cv-c { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; font-family: Georgia, serif; color: #111; }
+    .cv-c .nm { font-size: 22px; font-weight: 700; } .cv-c .rl { font-size: 13px; color: #666; margin: 2px 0; } .cv-c .ct { font-size: 12px; color: #888; border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 10px; }
+    .cv-c .sh { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; border-bottom: .5px solid #ccc; padding-bottom: 3px; margin: 12px 0 5px; }
+    .cv-c .tx { font-size: 13px; line-height: 1.65; }
+
+    /* Moderno */
+    .cv-m { display: grid; grid-template-columns: 38% 62%; border-radius: 8px; overflow: hidden; min-height: 260px; }
+    .cv-m-l { background: #12122a; padding: 1.25rem; color: #fff; }
+    .cv-m-r { background: #1a1a2e; padding: 1.25rem; color: #fff; }
+    .cv-m .nm { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+    .cv-m .rl { font-size: 11px; color: #7c9cf8; margin-bottom: 8px; }
+    .cv-m .ct { font-size: 11px; color: rgba(255,255,255,.5); line-height: 1.7; }
+    .cv-m .sh { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #7c9cf8; margin: 10px 0 4px; }
+    .cv-m .tx { font-size: 12px; line-height: 1.6; color: rgba(255,255,255,.8); }
+
+    /* Creativo */
+    .cv-cr { background: #f5f3ff; border-radius: 8px; overflow: hidden; border: .5px solid #c4b5fd; }
+    .cv-cr-top { background: var(--purple); padding: 1.25rem; }
+    .cv-cr .nm { font-size: 20px; font-weight: 700; color: #fff; }
+    .cv-cr .rl { font-size: 12px; color: #c4b5fd; margin: 3px 0; }
+    .cv-cr .ct { font-size: 11px; color: rgba(255,255,255,.6); }
+    .cv-cr-body { padding: 1.25rem; }
+    .cv-cr .sh { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--purple); margin: 10px 0 4px; display: flex; align-items: center; gap: 6px; }
+    .cv-cr .sh::after { content: ''; flex: 1; height: 1px; background: #c4b5fd; }
+    .cv-cr .tx { font-size: 13px; line-height: 1.65; color: #1e1b4b; }
+
+    /* Minimalista */
+    .cv-mn { background: #fafaf8; border: .5px solid #e0ddd6; border-radius: 8px; padding: 1.5rem; }
+    .cv-mn .nm { font-size: 24px; font-weight: 300; letter-spacing: -.02em; }
+    .cv-mn .rl { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: #9a9890; margin: 3px 0; }
+    .cv-mn .ct { font-size: 12px; color: #7a7870; border-bottom: 1px solid #e0ddd6; padding-bottom: 10px; margin-bottom: 12px; }
+    .cv-mn .sh { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: #9a9890; margin: 12px 0 5px; }
+    .cv-mn .tx { font-size: 13px; line-height: 1.7; font-weight: 300; }
+
+    /* CARTA */
+    .carta-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 1.5rem; margin-top: 1rem; }
+    .carta-box h3 { font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 10px; }
+    .carta-box p { font-size: 14px; line-height: 1.75; color: var(--text); }
+
+    /* PRICING */
+    .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.25rem; }
+    @media(max-width:480px){ .pricing-grid { grid-template-columns: 1fr; } }
+    .price-card { border: 1.5px solid var(--border); border-radius: 10px; padding: 1.25rem; cursor: pointer; transition: border-color .2s; text-align: center; }
+    .price-card:hover { border-color: var(--accent); }
+    .price-card.sel { border-color: var(--accent); background: #f0f5ff; }
+    .price-card.featured { border-color: var(--green); }
+    .price-card.featured.sel { background: var(--green-bg); }
+    .pc-badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; background: var(--green-bg); color: var(--green); margin-bottom: 8px; display: inline-block; }
+    .pc-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    .pc-price { font-family: var(--font-d); font-size: 28px; color: var(--text); margin-bottom: 4px; }
+    .pc-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .pc-items { text-align: left; margin-top: 10px; }
+    .pc-item { font-size: 12px; color: var(--text); padding: 3px 0; display: flex; align-items: center; gap: 6px; }
+    .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+    /* SUCCESS */
+    .success { background: var(--green-bg); border: 1px solid var(--green-border); border-radius: var(--r); padding: 1.25rem; text-align: center; margin-bottom: 1rem; }
+    .success h3 { font-family: var(--font-d); font-size: 1.2rem; font-weight: 400; color: var(--green); margin-bottom: 4px; }
+    .success p { font-size: 13px; color: #2a7a52; }
+
+    /* FOOTER */
+    .footer { text-align: center; margin-top: 2.5rem; font-size: 12px; color: #bbb; }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .header, .steps, .tpl-grid, .pricing-section, .success, .btn, .footer, #panelForm { display: none !important; }
+      .card { border: none; padding: 0; box-shadow: none; }
+      .carta-box { border: none; padding: 0; margin-top: 2rem; page-break-before: always; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="logo">CV<span>rápido</span></div>
+    <div class="tagline">Tu CV profesional listo en segundos · con IA</div>
+  </div>
+
+  <div class="steps">
+    <span class="step active" id="s1">1 · Tus datos</span>
+    <span class="sep">›</span>
+    <span class="step" id="s2">2 · Elegí diseño</span>
+    <span class="sep">›</span>
+    <span class="step" id="s3">3 · Descargá</span>
+  </div>
+
+  <!-- PASO 1: FORMULARIO -->
+  <div id="panelForm">
+    <div class="card">
+      <div class="field">
+        <label>Información personal</label>
+        <div class="row2" style="margin-bottom:10px">
+          <input id="f_nombre" type="text" placeholder="Nombre completo *"/>
+          <input id="f_puesto" type="text" placeholder="Puesto que buscás"/>
+        </div>
+        <div class="row2">
+          <input id="f_email" type="email" placeholder="Email"/>
+          <input id="f_tel" type="text" placeholder="Teléfono"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Experiencia laboral</label>
+        <textarea id="f_exp" placeholder="Ej: Cajera en Supermercado Norte (2022-2024). Moza en Bar El Central (2020-2022)."></textarea>
+      </div>
+      <div class="field">
+        <label>Educación</label>
+        <textarea id="f_edu" placeholder="Ej: Secundario completo, IPEM N°45, 2019. Curso de Excel, 2022." style="min-height:60px"></textarea>
+      </div>
+      <div class="field">
+        <label>Habilidades</label>
+        <input id="f_hab" type="text" placeholder="Ej: Atención al cliente, Excel, trabajo en equipo, puntualidad, inglés básico"/>
+      </div>
+      <button class="btn btn-blue" id="btnGen" onclick="generarCV()">Generar mi CV y ver diseños →</button>
+    </div>
+  </div>
+
+  <!-- PASO 2: DISEÑO + PRICING -->
+  <div id="panelPreview" style="display:none">
+
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Elegí el diseño que más te gusta y hacé clic para previsualizarlo:</p>
+
+    <div class="tpl-grid">
+      <div class="tpl-card sel" id="tpl0" onclick="selTpl(0)">
+        <div class="tpl-thumb" style="background:#fff;padding:7px">
+          <div class="tl dk w70"></div><div style="height:2px"></div>
+          <div class="tl gy w40"></div><div style="height:2px"></div>
+          <div class="tsep"></div>
+          <div class="tl dk w100"></div><div style="height:2px"></div>
+          <div class="tl gy w80"></div><div style="height:2px"></div>
+          <div class="tl gy w60"></div>
+        </div>
+        <div class="tpl-label">Clásico</div>
+      </div>
+      <div class="tpl-card" id="tpl1" onclick="selTpl(1)">
+        <div class="tpl-thumb" style="display:grid;grid-template-columns:38% 62%">
+          <div style="background:#12122a;padding:6px">
+            <div class="tl wh w80"></div><div style="height:2px"></div>
+            <div style="height:.5px;background:rgba(255,255,255,.15);margin:3px 0"></div>
+            <div class="tl wh w60"></div><div style="height:2px"></div>
+            <div class="tl wh w50"></div>
+          </div>
+          <div style="background:#1a1a2e;padding:6px">
+            <div class="tl wh w80"></div><div style="height:2px"></div>
+            <div class="tl wh w60"></div><div style="height:3px"></div>
+            <div class="tl wh w100"></div><div style="height:2px"></div>
+            <div class="tl wh w70"></div>
+          </div>
+        </div>
+        <div class="tpl-label">Moderno</div>
+      </div>
+      <div class="tpl-card" id="tpl2" onclick="selTpl(2)">
+        <div class="tpl-thumb" style="overflow:hidden">
+          <div style="background:#4c1d95;padding:6px 8px">
+            <div class="tl wh w70"></div><div style="height:2px"></div>
+            <div class="tl pp w35" style="width:35%"></div>
+          </div>
+          <div style="background:#f5f3ff;padding:6px 8px">
+            <div class="tl bl w80"></div><div style="height:2px"></div>
+            <div style="height:.5px;background:#c4b5fd;margin:3px 0"></div>
+            <div class="tl gy w60"></div><div style="height:2px"></div>
+            <div class="tl gy w90"></div>
+          </div>
+        </div>
+        <div class="tpl-label">Creativo</div>
+      </div>
+      <div class="tpl-card" id="tpl3" onclick="selTpl(3)">
+        <div class="tpl-thumb" style="background:#fafaf8;padding:7px">
+          <div class="tl dk w80" style="height:5px"></div><div style="height:3px"></div>
+          <div class="tl gy w40"></div><div style="height:2px"></div>
+          <div class="tsep"></div>
+          <div class="tl gy w50"></div><div style="height:3px"></div>
+          <div class="tl dk w100"></div><div style="height:2px"></div>
+          <div class="tl dk w80"></div>
+        </div>
+        <div class="tpl-label">Minimalista</div>
+      </div>
+    </div>
+
+    <!-- CV Preview -->
+    <div class="cv-wrap" id="cvWrap"></div>
+
+    <!-- PRICING -->
+    <div class="pricing-section" id="pricingSection">
+      <p style="font-size:13px;font-weight:500;margin-bottom:10px">Elegí tu plan:</p>
+      <div class="pricing-grid">
+        <div class="price-card" id="plan0" onclick="selPlan(0)">
+          <div class="pc-name">Solo CV</div>
+          <div class="pc-price">$800</div>
+          <div class="pc-desc">ARS · pago único</div>
+          <div class="pc-items">
+            <div class="pc-item"><span class="dot"></span>CV en PDF</div>
+            <div class="pc-item"><span class="dot"></span>Diseño elegido</div>
+            <div class="pc-item"><span class="dot"></span>Listo para imprimir</div>
+          </div>
+        </div>
+        <div class="price-card featured sel" id="plan1" onclick="selPlan(1)">
+          <div class="pc-badge">Más completo</div>
+          <div class="pc-name">CV + Carta</div>
+          <div class="pc-price">$1.500</div>
+          <div class="pc-desc">ARS · pago único</div>
+          <div class="pc-items">
+            <div class="pc-item"><span class="dot"></span>CV en PDF</div>
+            <div class="pc-item"><span class="dot"></span>Carta de presentación</div>
+            <div class="pc-item"><span class="dot"></span>Ambos listos para enviar</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-green" onclick="simularPago()">Pagar y descargar →</button>
+      <button class="btn btn-outline" onclick="demoDesbloqueo()">Ver demo sin pagar (solo prueba)</button>
+    </div>
+
+    <!-- Success -->
+    <div id="successBox" style="display:none">
+      <div class="success">
+        <h3>¡Pago confirmado!</h3>
+        <p id="successMsg">Tu CV y carta de presentación están listos para descargar.</p>
+      </div>
+      <button class="btn btn-blue" style="margin-bottom:10px" onclick="window.print()">Guardar CV como PDF</button>
+    </div>
+
+    <!-- Carta de presentación (visible tras pago si eligió plan completo) -->
+    <div class="carta-box" id="cartaBox" style="display:none">
+      <h3>Carta de presentación</h3>
+      <p id="cartaTexto"></p>
+    </div>
+  </div>
+
+  <div class="footer">CVrápido · Powered by Claude AI · Para producción: integrar MercadoPago o Stripe</div>
+</div>
+
+<script>
+let cvData = {};
+let selTplIdx = 0;
+let selPlanIdx = 1;
+
+function selTpl(i) {
+  document.querySelectorAll('.tpl-card').forEach((c,idx) => c.classList.toggle('sel', idx===i));
+  selTplIdx = i;
+  renderCV();
+}
+
+function selPlan(i) {
+  document.querySelectorAll('.price-card').forEach((c,idx) => c.classList.toggle('sel', idx===i));
+  selPlanIdx = i;
+}
+
+function renderCV() {
+  const d = cvData;
+  const w = document.getElementById('cvWrap');
+  const tpls = ['c','m','cr','mn'];
+  const t = tpls[selTplIdx];
+
+  if (t === 'c') {
+    w.innerHTML = `<div class="cv-c">
+      <div class="nm">${d.nombre}</div>
+      ${d.puesto?`<div class="rl">${d.puesto}</div>`:''}
+      <div class="ct">${[d.email,d.tel].filter(Boolean).join(' · ')||'—'}</div>
+      <div class="sh">Perfil profesional</div><div class="tx">${d.perfil}</div>
+      <div class="sh">Experiencia</div><div class="tx">${d.experiencia}</div>
+      <div class="sh">Educación</div><div class="tx">${d.educacion}</div>
+      <div class="sh">Habilidades</div><div class="tx">${d.habilidades}</div>
+    </div>`;
+  } else if (t === 'm') {
+    w.innerHTML = `<div class="cv-m">
+      <div class="cv-m-l">
+        <div class="nm">${d.nombre}</div>
+        <div class="rl">${d.puesto||''}</div>
+        <div class="sh">Contacto</div>
+        <div class="ct">${d.email||'—'}<br>${d.tel||''}</div>
+        <div class="sh">Habilidades</div><div class="tx">${d.habilidades}</div>
+        <div class="sh">Educación</div><div class="tx">${d.educacion}</div>
+      </div>
+      <div class="cv-m-r">
+        <div class="sh">Perfil</div><div class="tx">${d.perfil}</div>
+        <div class="sh">Experiencia</div><div class="tx">${d.experiencia}</div>
+      </div>
+    </div>`;
+  } else if (t === 'cr') {
+    w.innerHTML = `<div class="cv-cr">
+      <div class="cv-cr-top">
+        <div class="nm">${d.nombre}</div>
+        <div class="rl">${d.puesto||''}</div>
+        <div class="ct">${[d.email,d.tel].filter(Boolean).join(' · ')||'—'}</div>
+      </div>
+      <div class="cv-cr-body">
+        <div class="sh">Perfil</div><div class="tx">${d.perfil}</div>
+        <div class="sh">Experiencia</div><div class="tx">${d.experiencia}</div>
+        <div class="sh">Educación</div><div class="tx">${d.educacion}</div>
+        <div class="sh">Habilidades</div><div class="tx">${d.habilidades}</div>
+      </div>
+    </div>`;
+  } else {
+    w.innerHTML = `<div class="cv-mn">
+      <div class="nm">${d.nombre}</div>
+      ${d.puesto?`<div class="rl">${d.puesto}</div>`:''}
+      <div class="ct">${[d.email,d.tel].filter(Boolean).join(' · ')||'—'}</div>
+      <div class="sh">Perfil</div><div class="tx">${d.perfil}</div>
+      <div class="sh">Experiencia</div><div class="tx">${d.experiencia}</div>
+      <div class="sh">Educación</div><div class="tx">${d.educacion}</div>
+      <div class="sh">Habilidades</div><div class="tx">${d.habilidades}</div>
+    </div>`;
+  }
+}
+
+async function generarCV() {
+  const nombre = document.getElementById('f_nombre').value.trim();
+  if (!nombre) { alert('Ingresá tu nombre para continuar.'); return; }
+
+  const btn = document.getElementById('btnGen');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> Generando tu CV...';
+
+  const puesto = document.getElementById('f_puesto').value.trim();
+  const email = document.getElementById('f_email').value.trim();
+  const tel = document.getElementById('f_tel').value.trim();
+  const exp = document.getElementById('f_exp').value.trim();
+  const edu = document.getElementById('f_edu').value.trim();
+  const hab = document.getElementById('f_hab').value.trim();
+
+  const prompt = `Generá contenido de CV profesional en español para Argentina. Devolvé SOLO JSON con estas claves exactas: perfil, experiencia, educacion, habilidades. Sin texto extra, sin markdown, sin backticks.
+
+Nombre: ${nombre}
+Puesto deseado: ${puesto||'no especificado'}
+Experiencia: ${exp||'no especificada'}
+Educación: ${edu||'no especificada'}
+Habilidades: ${hab||'no especificadas'}
+
+- perfil: 2-3 oraciones en primera persona, atractivas y profesionales.
+- experiencia: redactada con guiones por cada puesto, con logros si es posible.
+- educacion: clara y ordenada cronológicamente.
+- habilidades: lista fluida separada por comas.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    let txt = (data.content||[]).map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    const cv = JSON.parse(txt);
+
+    cvData = { nombre, puesto, email, tel,
+      perfil: cv.perfil||'', experiencia: cv.experiencia||'',
+      educacion: cv.educacion||'', habilidades: cv.habilidades||'' };
+
+    document.getElementById('panelForm').style.display = 'none';
+    document.getElementById('panelPreview').style.display = 'block';
+    document.getElementById('s1').className = 'step done';
+    document.getElementById('s2').className = 'step active';
+    renderCV();
+  } catch(e) {
+    alert('Error al generar el CV. Verificá tu conexión e intentá de nuevo.');
+    btn.disabled = false;
+    btn.innerHTML = 'Generar mi CV y ver diseños →';
+  }
+}
+
+async function simularPago() {
+  const btn = document.querySelector('.btn-pay');
+  btn.disabled = true;
+  btn.textContent = 'Conectando con MercadoPago...';
+
+  try {
+    const resp = await fetch('https://mi-cv-app-production.up.railway.app/crear-preferencia', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan: selPlanIdx })
+    });
+    const data = await resp.json();
+    if (data.init_point) {
+      // Guardar plan en localStorage para recuperarlo al volver
+      localStorage.setItem('cv_plan', selPlanIdx);
+      localStorage.setItem('cv_data', JSON.stringify(cvData));
+      window.location.href = data.init_point;
+    } else {
+      throw new Error('Sin init_point');
+    }
+  } catch(e) {
+    alert('Error al conectar con MercadoPago. Intentá de nuevo.');
+    btn.disabled = false;
+    btn.textContent = 'Pagar y descargar →';
+  }
+}
+
+// Al volver de MercadoPago, verificar si el pago fue aprobado
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('pago') === 'ok') {
+    const planGuardado = parseInt(localStorage.getItem('cv_plan') || '0');
+    const dataGuardada = localStorage.getItem('cv_data');
+    if (dataGuardada) {
+      cvData = JSON.parse(dataGuardada);
+      selPlanIdx = planGuardado;
+      document.getElementById('panelForm').style.display = 'none';
+      document.getElementById('panelPreview').style.display = 'block';
+      document.getElementById('s1').className = 'step done';
+      document.getElementById('s2').className = 'step done';
+      renderCV();
+      document.getElementById('pricingSection').style.display = 'none';
+      demoDesbloqueo();
+      localStorage.removeItem('cv_plan');
+      localStorage.removeItem('cv_data');
+    }
+  } else if (params.get('pago') === 'error') {
+    alert('El pago no se completó. Podés intentarlo de nuevo.');
+  }
+});
+
+async function demoDesbloqueo() {
+  document.getElementById('pricingSection').style.display = 'none';
+  document.getElementById('s2').className = 'step done';
+  document.getElementById('s3').className = 'step active';
+
+  if (selPlanIdx === 1) {
+    document.getElementById('successMsg').textContent = 'Tu CV y carta de presentación están listos.';
+    document.getElementById('successBox').style.display = 'block';
+
+    // Generar carta
+    const cartaBox = document.getElementById('cartaBox');
+    const cartaTexto = document.getElementById('cartaTexto');
+    cartaTexto.textContent = 'Generando carta de presentación...';
+    cartaBox.style.display = 'block';
+
+    const prompt = `Escribí una carta de presentación profesional en español para Argentina, en primera persona, lista para usar. Que sea cálida, directa y de no más de 3 párrafos.
+
+Nombre: ${cvData.nombre}
+Puesto deseado: ${cvData.puesto||'el puesto disponible'}
+Perfil: ${cvData.perfil}
+Experiencia: ${cvData.experiencia}
+
+Empezá con "Estimados/as:" y terminá con una despedida cordial.`;
+
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 600,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      const data = await resp.json();
+      cartaTexto.textContent = (data.content||[]).map(b=>b.text||'').join('');
+    } catch(e) {
+      cartaTexto.textContent = 'No se pudo generar la carta. Intentá de nuevo.';
+    }
+  } else {
+    document.getElementById('successMsg').textContent = 'Tu CV está listo para descargar.';
+    document.getElementById('successBox').style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>
